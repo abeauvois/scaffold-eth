@@ -48,7 +48,8 @@ const StyledEthereumLogo = styled.img<{ size: string }>`
 const StyledEuroLogo = styled.div<{ size: string }>`
   width: ${({ size }) => size};
   height: ${({ size }) => size};
-  background: blue;
+  font-size: 0.7rem;
+  background: #30a0a0;
   color: #fff;
   border-radius: 24px;
   border: 4px solid #fff;

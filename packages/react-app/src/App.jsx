@@ -1,10 +1,13 @@
+import React, { useCallback, useEffect, useState } from "react";
+import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { Alert, Button, Col, Menu, Row } from "antd";
 import "antd/dist/antd.css";
-import React, { useCallback, useEffect, useState } from "react";
-import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
-import Web3Modal from "web3modal";
 import "./App.css";
+
+// Crypto
+import Web3Modal from "web3modal";
+
 import { Account, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch } from "./components";
 import { INFURA_ID, NETWORK, NETWORKS } from "./constants";
 import { Transactor } from "./helpers";
@@ -19,7 +22,7 @@ import {
   useUserSigner,
 } from "./hooks";
 // import Hints from "./Hints";
-import { ExampleUI, Hints, Subgraph } from "./views";
+import { Drag, ExampleUI, Hints, Subgraph } from "./views";
 
 const { ethers } = require("ethers");
 /*
@@ -100,7 +103,7 @@ function App(props) {
   /* 💵 This hook will get the price of ETH from 🦄 Uniswap: */
   const price = useExchangePrice(targetNetwork, mainnetProvider);
 
-  /* 🔥 This hook will get the price of Gas from ⛽️ EtherGasStation */
+  /* 🔥 Price of Gas from ⛽️ EtherGasStation */
   const gasPrice = useGasPrice(targetNetwork, "fast");
   // Use your injected provider from 🦊 Metamask or if you don't have it then instantly generate a 🔥 burner wallet.
   const userSigner = useUserSigner(injectedProvider, localProvider);
@@ -204,7 +207,7 @@ function App(props) {
     mainnetContracts,
   ]);
 
-  let networkDisplay = "";
+  let networkDisplay;
   if (NETWORKCHECK && localChainId && selectedChainId && localChainId !== selectedChainId) {
     const networkSelected = NETWORK(selectedChainId);
     const networkLocal = NETWORK(localChainId);
@@ -252,7 +255,9 @@ function App(props) {
 
   const loadWeb3Modal = useCallback(async () => {
     const provider = await web3Modal.connect();
-    setInjectedProvider(new ethers.providers.Web3Provider(provider));
+    const injectedPRovider = new ethers.providers.Web3Provider(provider);
+
+    setInjectedProvider(injectedPRovider);
 
     provider.on("chainChanged", chainId => {
       console.log(`chain changed to ${chainId}! updating providers`);
@@ -282,7 +287,7 @@ function App(props) {
     setRoute(window.location.pathname);
   }, [setRoute]);
 
-  let faucetHint = "";
+  let faucetHint;
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
 
   const [faucetClicked, setFaucetClicked] = useState(false);
@@ -337,6 +342,16 @@ function App(props) {
               to="/hints"
             >
               Hints
+            </Link>
+          </Menu.Item>
+          <Menu.Item key="/drag">
+            <Link
+              onClick={() => {
+                setRoute("/drag");
+              }}
+              to="/drag"
+            >
+              Drag
             </Link>
           </Menu.Item>
           <Menu.Item key="/exampleui">
@@ -394,6 +409,9 @@ function App(props) {
               mainnetProvider={mainnetProvider}
               price={price}
             />
+          </Route>
+          <Route path="/drag">
+            <Drag />
           </Route>
           <Route path="/exampleui">
             <ExampleUI

@@ -29,5 +29,14 @@ module.exports = {
     "no-nested-ternary": "off",
     "no-restricted-syntax": "off",
     "no-plusplus": "off",
+    "max-classes-per-file": "off",
   },
+  overrides: [
+    {
+      files: ["**/*.ts"],
+      parser: "@typescript-eslint/parser",
+      plugins: ["@typescript-eslint"],
+      extends: ["plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended"],
+    },
+  ],
 };

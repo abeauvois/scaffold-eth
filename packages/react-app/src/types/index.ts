@@ -35,3 +35,5 @@ export type Container = {
 
 export type Containers = Map<string, Container>;
 export type Values = Map<string, Value>;
+
+export type TokensById = Record<string, Token>;

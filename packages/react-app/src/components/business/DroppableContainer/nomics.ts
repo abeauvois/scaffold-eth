@@ -42,7 +42,7 @@ const useNomics = (): { pricesBySymbolMap: Map<string, number> } => {
   }, []);
 
   useEffect(() => {
-    if (pricesBySymbolMap) console.log(pricesBySymbolMap.get("DAI"));
+    // if (pricesBySymbolMap) console.log(pricesBySymbolMap.get("DAI"));
   }, [pricesBySymbolMap]);
 
   return { pricesBySymbolMap };

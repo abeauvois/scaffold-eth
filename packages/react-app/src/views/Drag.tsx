@@ -5,15 +5,16 @@ import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 
 import { Row, Col } from "antd";
 
-import { utils } from "ethers";
-import { Address, Balance } from "../components";
+// import { utils } from "ethers";
+// import { Address, Balance } from "../components";
 
 import { capitalize } from "../helpers";
 
 import { ValueItem, DroppableContainer, Value } from "../components";
-
 import { DAI, USDC } from "../data/Tokens";
 import * as Types from "../types";
+
+import { fetchTokensList } from "../components/useTokens";
 
 const daiContainer = {
   id: DAI.address,
@@ -40,6 +41,7 @@ function useHomeState() {
   const [values, setValues] = useState<Types.Values>();
   const [draggingValueId, setDraggingValueId] = useState<Types.Value["id"]>();
   const [dropContainerId, setDropContainerId] = useState<Types.Container["id"]>();
+  const [tokensById, setTokensById] = useState<Types.TokensById>();
 
   // Update state
   function move(valueId: Types.Value["id"], toContainerId: Types.Container["id"]) {
@@ -63,6 +65,8 @@ function useHomeState() {
 
     // Reset values and containers with new state
     if (values && containers) {
+      console.log("🚀 ~ file: Drag.tsx ~ line 68 ~ move ~ values && containers", values, containers);
+
       setContainers(new Map(containers));
       setValues(new Map(values));
     }
@@ -82,16 +86,29 @@ function useHomeState() {
     ]);
     setContainers(initialContainers);
   }, []);
-
   useEffect(() => {
     setDraggingValueId(value1.id);
   }, []);
   useEffect(() => {
     setDropContainerId(daiContainer.id);
   }, []);
+  useEffect(() => {
+    async function getTokens() {
+      const getTokens = fetchTokensList();
+      const _tokens = await getTokens();
+      setTokensById(_tokens);
+    }
+    getTokens();
+  }, []);
 
   // Update state when draggingValueId or dropContainerId change
   useEffect(() => {
+    // console.log(
+    //   "🚀 ~ file: Drag.tsx ~ line 104 ~ useEffect ~ draggingValueId, dropContainerId",
+    //   draggingValueId,
+    //   dropContainerId,
+    // );
+
     if (draggingValueId && dropContainerId) {
       move(draggingValueId, dropContainerId);
     }
@@ -103,12 +120,16 @@ function useHomeState() {
   };
 
   const handleDragEnd = (dragEvent: DragEndEvent) => {
-    const { over } = dragEvent;
+    const { active, over } = dragEvent;
     over && setDropContainerId(over.id);
+    // remove active value from its parent Container
+    // const value = values?.get(active.id);
+    // const fromContainer = value?.parentId && containers?.get(value.parentId);
+    // fromContainer && fromContainer.values.delete(active.id);
     setDraggingValueId(undefined);
   };
 
-  return { containers, values, draggingValueId, dropContainerId, handleDragStart, handleDragEnd };
+  return { tokensById, containers, values, draggingValueId, dropContainerId, handleDragStart, handleDragEnd };
 }
 
 interface DraggableValueProps {
@@ -137,9 +158,15 @@ function DraggableValue({ id, handle, children }: DraggableValueProps) {
 }
 
 function Drag() {
-  const { containers, values, draggingValueId, dropContainerId, handleDragStart, handleDragEnd } = useHomeState();
-
-  const pairRate = 3.4; //usePairRate();
+  const {
+    tokensById,
+    containers,
+    values,
+    draggingValueId,
+    dropContainerId,
+    handleDragStart,
+    handleDragEnd,
+  } = useHomeState();
 
   if (!containers) return null;
 
@@ -150,7 +177,7 @@ function Drag() {
       <Row align="middle" justify="space-around" style={{ height: "calc(100vh - 160px)" }}>
         {Array.from(containers).map(([containerId, container]) => (
           <Col key={containerId}>
-            <DroppableContainer container={container} dragging={Boolean(draggingValueId)}>
+            <DroppableContainer tokensById={tokensById} container={container} dragging={Boolean(draggingValueId)}>
               {Array.from(container.values).map(([valueId, value]) => {
                 return (
                   <DraggableValue key={valueId} id={valueId} dragging>

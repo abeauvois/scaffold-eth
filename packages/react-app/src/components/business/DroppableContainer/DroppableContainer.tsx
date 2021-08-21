@@ -2,21 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Currency } from "@uniswap/sdk";
 import classNames from "classnames";
-import { BigNumber } from "ethers";
+// import { BigNumber } from "ethers";
 
 import styles from "./DroppableContainer.module.css";
 
 import { ValueItem } from "../ValueItem";
 
-import { Container, Dollar, Euro, Token, Values } from "../../../types";
+import { Container, Dollar, Euro, TokensById } from "../../../types";
 
-import { fetchPair, useUniswapPairPrice, WETH, DAI } from "./useUniswapPairPrice";
-import { fetchTokensList } from "../../useTokens";
+// import { fetchPair, useUniswapPairPrice, WETH, DAI } from "./useUniswapPairPrice";
 import useNomics from "./nomics";
 
 // const getTrades = async (
 //   selectedProvider: JsonRpcProvider,
-//   tokens: Record<string, Token>,
+//   tokensById: Record<string, Token>,
 //   tokenList: Token[],
 //   tokenIn = "ETH",
 //   tokenOut = "DAI",
@@ -101,15 +100,18 @@ import useNomics from "./nomics";
 //   }
 // };
 
-type TokensById = Record<string, Token>;
-
 const euro = new Euro();
 const dollar = new Dollar();
 
 const isFiat = (currency: Currency) => [euro.symbol, dollar.symbol].indexOf(currency.symbol) >= 0;
 
 async function getTotalAmount(container: Container, tokensById: TokensById, pricesBySymbol: Map<string, number>) {
-  if (!pricesBySymbol) return null;
+  console.log(
+    "🚀 ~ file: DroppableContainer.tsx ~ line 112 ~ getTotalAmount ~ container.currency",
+    container.currency.symbol,
+    container.values.size,
+  );
+  if (!pricesBySymbol) return 0;
 
   const values = container.values;
   const containerCurrency = container.currency;
@@ -145,12 +147,12 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
               tokenOut = tokensById[containerCurrency.symbol];
               rateValueUnitsForOneContainerUnit =
                 pricesBySymbol.get("EUR") / pricesBySymbol.get(containerCurrency.symbol);
-              console.log(
-                "🚀 ~ file: DroppableContainer.tsx ~ line 148 ~ returnArray.from ~ rateValueUnitsForOneContainerUnit",
-                pricesBySymbol.get("EUR"),
-                pricesBySymbol.get(containerCurrency.symbol),
-                rateValueUnitsForOneContainerUnit,
-              );
+              // console.log(
+              //   "🚀 ~ file: DroppableContainer.tsx ~ line 148 ~ returnArray.from ~ rateValueUnitsForOneContainerUnit",
+              //   pricesBySymbol.get("EUR"),
+              //   pricesBySymbol.get(containerCurrency.symbol),
+              //   rateValueUnitsForOneContainerUnit,
+              // );
               break;
             case "USD":
               rateValueUnitsForOneContainerUnit = 1 / pricesBySymbol.get("EUR");
@@ -183,13 +185,13 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
       tokenIn = tokensById[value.currency.symbol];
       tokenOut = tokensById[containerCurrency.symbol];
     }
-    console.log(
-      "🚀 ~ file: DroppableContainer.tsx ~ line 178 ~ returnArray.from ~ curr",
-      curr,
-      tokenIn,
-      tokenOut,
-      rateValueUnitsForOneContainerUnit,
-    );
+    // console.log(
+    //   "🚀 ~ file: DroppableContainer.tsx ~ line 178 ~ returnArray.from ~ curr",
+    //   curr,
+    //   tokenIn,
+    //   tokenOut,
+    //   rateValueUnitsForOneContainerUnit,
+    // );
     // const tokenOut = container.currency.symbol
     // const pair = fetchPair(tokenIn, tokenOut)
     const newValueAmount = value.amount * rateValueUnitsForOneContainerUnit;
@@ -199,29 +201,27 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
 }
 
 interface Props {
-  children: React.ReactNode;
+  tokensById: TokensById;
   container: Container;
   dragging: boolean;
+  children: React.ReactNode;
 }
 
-export function DroppableContainer({ children, container, dragging }: Props) {
+export function DroppableContainer({ tokensById, container, dragging, children }: Props) {
   const { isOver, setNodeRef } = useDroppable({ id: container.id });
 
-  const [tokensById, setTokensById] = useState<TokensById>();
   const { pricesBySymbolMap } = useNomics();
   const [total, setTotal] = useState<number>();
   // const { numberTokenInForOneTokenOut } = useUniswapPairPrice(DAI, container.currency.symbol);
 
   useEffect(() => {
+    // console.log("line 213 ~ DroppableContainer ~ symbol", container.currency.symbol);
     async function getTokens() {
-      const getTokens = fetchTokensList();
-      const _tokens = await getTokens();
-      const total = await getTotalAmount(container, _tokens, pricesBySymbolMap);
+      const total = await getTotalAmount(container, tokensById, pricesBySymbolMap);
       setTotal(total);
-      setTokensById(_tokens);
     }
     getTokens();
-  }, [isOver, pricesBySymbolMap]);
+  }, [isOver, pricesBySymbolMap, dragging]);
 
   return (
     <div
@@ -235,7 +235,6 @@ export function DroppableContainer({ children, container, dragging }: Props) {
       aria-label="DroppableContainer region"
     >
       {children}
-
       <ValueItem amount={total} currency={container.currency} />
     </div>
   );

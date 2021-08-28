@@ -198,7 +198,7 @@ function InputBank({ nativePrice, onClick }) {
           setAmount(value);
         }}
       />
-      <Button onClick={onClick(amount)}>Add to bank</Button>
+      <Button onClick={onClick(Number(amount))}>Add to bank</Button>
     </Row>
   );
 }
@@ -223,6 +223,7 @@ function Drag() {
 
   const moveToBank = (amount: number) => (event: MouseEvent) => {
     const newValue = createValue({ amount, currency: nativeToken });
+    console.log("🚀 ~ file: Drag.tsx ~ line 226 ~ moveToBank ~ newValue", newValue);
     const bank = containers.get(bankContainer.id);
     bank.values.set(newValue.id, newValue);
     values.set(newValue.id, newValue);

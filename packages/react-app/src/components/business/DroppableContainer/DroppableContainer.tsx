@@ -216,9 +216,20 @@ function DroppableContainer({ tokensBySymbol, pricesBySymbol, container, draggin
       )}
       aria-label="DroppableContainer region"
     >
+      <ValueItem isTotal amount={total} currency={container.currency} />
       {children}
-      <ValueItem amount={total} currency={container.currency} />
-      <p>{container.service.id}</p>
+      <p
+        style={{
+          position: "absolute",
+          top: 0,
+          fontSize: "120px",
+          zIndex: -1,
+          color: "#eee",
+          transform: "translate3d(10px, 30%, 0px)",
+        }}
+      >
+        {container.service.id}
+      </p>
     </div>
   );
 }

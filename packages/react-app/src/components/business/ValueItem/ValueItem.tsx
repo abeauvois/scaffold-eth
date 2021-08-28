@@ -9,11 +9,11 @@ import styles from "./ValueItem.module.css";
 
 const { Paragraph } = Typography;
 
-type Props = { amount: number; currency: Currency };
+type Props = { amount: number; currency: Currency; isTotal?: boolean };
 
-export function ValueItem({ amount, currency }: Props) {
+export function ValueItem({ amount, currency, isTotal }: Props) {
   return (
-    <div className={classNames(styles.ValueItem)}>
+    <div className={classNames(isTotal ? styles.Total : styles.ValueItem)}>
       <CurrencyLogo currency={currency} />
       <p style={{ fontSize: "x-large", margin: 0 }}>{amount?.toFixed(2)}</p>
     </div>

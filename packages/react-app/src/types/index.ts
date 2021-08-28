@@ -19,6 +19,10 @@ export class Dollar extends Currency {
 
 export { Token, ChainId };
 
+export type Service = {
+  id: "BANK" | "SWAP" | "STAKE" | "POOL";
+};
+
 export type Value = {
   id: string;
   amount: number;
@@ -28,6 +32,7 @@ export type Value = {
 
 export type Container = {
   id: string;
+  service: Service;
   displayName: string;
   currency: Currency;
   values: Map<string, Value>;
@@ -36,4 +41,4 @@ export type Container = {
 export type Containers = Map<string, Container>;
 export type Values = Map<string, Value>;
 
-export type TokensById = Record<string, Token>;
+export type TokensBySymbol = Record<string, Token>;

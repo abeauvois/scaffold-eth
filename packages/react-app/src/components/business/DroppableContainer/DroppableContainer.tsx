@@ -8,14 +8,12 @@ import styles from "./DroppableContainer.module.css";
 
 import { ValueItem } from "../ValueItem";
 
-import { Container, Dollar, Euro, TokensById } from "../../../types";
+import { Container, Dollar, Euro, TokensBySymbol } from "../../../types";
 
 // import { fetchPair, useUniswapPairPrice, WETH, DAI } from "./useUniswapPairPrice";
-import useNomics from "./nomics";
-
 // const getTrades = async (
 //   selectedProvider: JsonRpcProvider,
-//   tokensById: Record<string, Token>,
+//   tokensBySymbol: Record<string, Token>,
 //   tokenList: Token[],
 //   tokenIn = "ETH",
 //   tokenOut = "DAI",
@@ -105,13 +103,12 @@ const dollar = new Dollar();
 
 const isFiat = (currency: Currency) => [euro.symbol, dollar.symbol].indexOf(currency.symbol) >= 0;
 
-async function getTotalAmount(container: Container, tokensById: TokensById, pricesBySymbol: Map<string, number>) {
-  console.log(
-    "🚀 ~ file: DroppableContainer.tsx ~ line 112 ~ getTotalAmount ~ container.currency",
-    container.currency.symbol,
-    container.values.size,
-  );
-  if (!pricesBySymbol) return 0;
+async function getTotalAmount(
+  container: Container,
+  tokensBySymbol: TokensBySymbol,
+  pricesBySymbol: Map<string, number>,
+) {
+  if (!pricesBySymbol || !tokensBySymbol) return 0;
 
   const values = container.values;
   const containerCurrency = container.currency;
@@ -144,20 +141,14 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
           switch (value.currency.symbol) {
             case "EUR":
               tokenIn = euro;
-              tokenOut = tokensById[containerCurrency.symbol];
+              tokenOut = tokensBySymbol[containerCurrency.symbol];
               rateValueUnitsForOneContainerUnit =
                 pricesBySymbol.get("EUR") / pricesBySymbol.get(containerCurrency.symbol);
-              // console.log(
-              //   "🚀 ~ file: DroppableContainer.tsx ~ line 148 ~ returnArray.from ~ rateValueUnitsForOneContainerUnit",
-              //   pricesBySymbol.get("EUR"),
-              //   pricesBySymbol.get(containerCurrency.symbol),
-              //   rateValueUnitsForOneContainerUnit,
-              // );
               break;
             case "USD":
               rateValueUnitsForOneContainerUnit = 1 / pricesBySymbol.get("EUR");
               tokenIn = dollar;
-              tokenOut = tokensById[containerCurrency.symbol];
+              tokenOut = tokensBySymbol[containerCurrency.symbol];
               break;
 
             default:
@@ -167,12 +158,12 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
           switch (containerCurrency.symbol) {
             case "EUR":
               rateValueUnitsForOneContainerUnit = pricesBySymbol.get("EUR");
-              tokenIn = tokensById[value.currency.symbol];
+              tokenIn = tokensBySymbol[value.currency.symbol];
               tokenOut = euro;
               break;
             case "USD":
               rateValueUnitsForOneContainerUnit = 1 / pricesBySymbol.get("EUR");
-              tokenIn = tokensById[value.currency.symbol];
+              tokenIn = tokensBySymbol[value.currency.symbol];
               tokenOut = dollar;
               break;
 
@@ -182,18 +173,10 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
         }
       }
     } else {
-      tokenIn = tokensById[value.currency.symbol];
-      tokenOut = tokensById[containerCurrency.symbol];
+      tokenIn = tokensBySymbol[value.currency.symbol];
+      tokenOut = tokensBySymbol[containerCurrency.symbol];
     }
-    // console.log(
-    //   "🚀 ~ file: DroppableContainer.tsx ~ line 178 ~ returnArray.from ~ curr",
-    //   curr,
-    //   tokenIn,
-    //   tokenOut,
-    //   rateValueUnitsForOneContainerUnit,
-    // );
-    // const tokenOut = container.currency.symbol
-    // const pair = fetchPair(tokenIn, tokenOut)
+
     const newValueAmount = value.amount * rateValueUnitsForOneContainerUnit;
 
     return acc + newValueAmount;
@@ -201,27 +184,26 @@ async function getTotalAmount(container: Container, tokensById: TokensById, pric
 }
 
 interface Props {
-  tokensById: TokensById;
+  tokensBySymbol: TokensBySymbol;
+  pricesBySymbol: Map<string, number>;
   container: Container;
   dragging: boolean;
   children: React.ReactNode;
 }
 
-export function DroppableContainer({ tokensById, container, dragging, children }: Props) {
+function DroppableContainer({ tokensBySymbol, pricesBySymbol, container, dragging, children }: Props) {
   const { isOver, setNodeRef } = useDroppable({ id: container.id });
 
-  const { pricesBySymbolMap } = useNomics();
   const [total, setTotal] = useState<number>();
   // const { numberTokenInForOneTokenOut } = useUniswapPairPrice(DAI, container.currency.symbol);
 
   useEffect(() => {
-    // console.log("line 213 ~ DroppableContainer ~ symbol", container.currency.symbol);
     async function getTokens() {
-      const total = await getTotalAmount(container, tokensById, pricesBySymbolMap);
+      const total = await getTotalAmount(container, tokensBySymbol, pricesBySymbol);
       setTotal(total);
     }
     getTokens();
-  }, [isOver, pricesBySymbolMap, dragging]);
+  }, [pricesBySymbol, dragging, container.values.size]);
 
   return (
     <div
@@ -236,6 +218,9 @@ export function DroppableContainer({ tokensById, container, dragging, children }
     >
       {children}
       <ValueItem amount={total} currency={container.currency} />
+      <p>{container.service.id}</p>
     </div>
   );
 }
+
+export { DroppableContainer };

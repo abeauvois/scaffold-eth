@@ -9,7 +9,8 @@ import styled from "styled-components";
 
 import { FiatCode, Token } from "../../../types";
 
-//import EthereumLogo from "../assets/ethereum-logo.png";
+// import EthereumLogo from "../../../../public/";
+// import EthereumLogo from "../public/eth-diamond-purple.png";
 
 const getTokenLogoURL = (address: string) =>
   `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`;
@@ -37,12 +38,13 @@ const Emoji = styled.span<{ size?: string }>`
   margin-bottom: -4px;
 `;
 
-const StyledEthereumLogo = styled.img<{ size: string }>`
+const StyledEthereumLogo = styled.span<{ size: string }>`
   width: ${({ size }) => size};
   height: ${({ size }) => size};
   border-radius: 24px;
   border: 4px solid #fff;
   box-sizing: content-box;
+  background: #b0d2f3;
 `;
 
 const StyledEuroLogo = styled.div<{ size: string }>`
@@ -67,9 +69,9 @@ function CurrencyLogo({
 }) {
   const [, refresh] = useState<number>(0);
 
-  //  if (currency === ETHER) {
-  //    return <StyledEthereumLogo src={EthereumLogo} size={size} {...rest} />;
-  //  }
+  if (currency.symbol === "ETH") {
+    return <StyledEthereumLogo children="Ξ" size={size} {...rest} />;
+  }
 
   if (currency instanceof Currency) {
     if (currency.name === FiatCode.EUR)

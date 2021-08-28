@@ -28,8 +28,8 @@ async function getNomicsPrice(ids, convert = "USD") {
   });
 }
 
-const useNomics = (): { pricesBySymbolMap: Map<string, number> } => {
-  const [pricesBySymbolMap, setPricesBySymbol] = useState<Map<string, number>>();
+const useNomics = (): { pricesBySymbol: Map<string, number> } => {
+  const [pricesBySymbol, setPricesBySymbol] = useState<Map<string, number>>();
 
   useEffect(() => {
     fetch(exchangeRatesUrl)
@@ -42,10 +42,10 @@ const useNomics = (): { pricesBySymbolMap: Map<string, number> } => {
   }, []);
 
   useEffect(() => {
-    // if (pricesBySymbolMap) console.log(pricesBySymbolMap.get("DAI"));
-  }, [pricesBySymbolMap]);
+    // if (pricesBySymbol) console.log(pricesBySymbol.get("DAI"));
+  }, [pricesBySymbol]);
 
-  return { pricesBySymbolMap };
+  return { pricesBySymbol };
 };
 
 export default useNomics;

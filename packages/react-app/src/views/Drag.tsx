@@ -2,29 +2,44 @@
 import React, { useEffect, useState } from "react";
 import { DndContext, DragOverlay, useDraggable } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import shortUUID from "short-uuid";
 
-import { Row, Col } from "antd";
+import { Row, Col, Button } from "antd";
 
 // import { utils } from "ethers";
 // import { Address, Balance } from "../components";
 
 import { capitalize } from "../helpers";
 
-import { ValueItem, DroppableContainer, Value } from "../components";
-import { DAI, USDC } from "../data/Tokens";
+import { ValueItem, DroppableContainer, Value, EtherInput } from "../components";
+import { DAI, USDC, OtherChainId, NATIVE } from "../data/Tokens";
 import * as Types from "../types";
 
 import { fetchTokensList } from "../components/useTokens";
+import { Currency } from "@uniswap/sdk";
+import useNomics from "../components/business/DroppableContainer/nomics";
 
-const daiContainer = {
+const nativeToken = NATIVE(Types.ChainId.MAINNET) as Types.Token;
+
+const bankContainer: Types.Container = {
+  id: nativeToken.address,
+  service: { id: "BANK" },
+  displayName: capitalize(nativeToken.symbol as string),
+  currency: nativeToken,
+  values: new Map<string, Types.Value>(),
+};
+
+const swapDaiContainer: Types.Container = {
   id: DAI.address,
+  service: { id: "SWAP" },
   displayName: capitalize(DAI.symbol as string),
   currency: DAI,
   values: new Map<string, Types.Value>(),
 };
 
-const usdcContainer = {
+const swapUsdcContainer: Types.Container = {
   id: USDC.address,
+  service: { id: "SWAP" },
   displayName: capitalize(USDC.symbol as string),
   currency: USDC,
   values: new Map<string, Types.Value>(),
@@ -36,12 +51,22 @@ const value1 = {
   currency: new Types.Euro(),
 };
 
+function createValue({ amount, currency }: { amount: number; currency?: Currency }): Types.Value {
+  return {
+    id: shortUUID.generate(),
+    amount,
+    currency: currency || nativeToken,
+  };
+}
+
 function useHomeState() {
   const [containers, setContainers] = useState<Types.Containers>();
   const [values, setValues] = useState<Types.Values>();
   const [draggingValueId, setDraggingValueId] = useState<Types.Value["id"]>();
   const [dropContainerId, setDropContainerId] = useState<Types.Container["id"]>();
-  const [tokensById, setTokensById] = useState<Types.TokensById>();
+  const [tokensBySymbol, setTokensBySymbol] = useState<Types.TokensBySymbol>();
+
+  const { pricesBySymbol } = useNomics();
 
   // Update state
   function move(valueId: Types.Value["id"], toContainerId: Types.Container["id"]) {
@@ -65,8 +90,6 @@ function useHomeState() {
 
     // Reset values and containers with new state
     if (values && containers) {
-      console.log("🚀 ~ file: Drag.tsx ~ line 68 ~ move ~ values && containers", values, containers);
-
       setContainers(new Map(containers));
       setValues(new Map(values));
     }
@@ -81,8 +104,9 @@ function useHomeState() {
   // Containers state initalization
   useEffect(() => {
     const initialContainers = new Map<string, Types.Container>([
-      [daiContainer.id, daiContainer],
-      [usdcContainer.id, usdcContainer],
+      [bankContainer.id, bankContainer],
+      [swapDaiContainer.id, swapDaiContainer],
+      [swapUsdcContainer.id, swapUsdcContainer],
     ]);
     setContainers(initialContainers);
   }, []);
@@ -90,46 +114,49 @@ function useHomeState() {
     setDraggingValueId(value1.id);
   }, []);
   useEffect(() => {
-    setDropContainerId(daiContainer.id);
+    setDropContainerId(swapDaiContainer.id);
   }, []);
   useEffect(() => {
     async function getTokens() {
       const getTokens = fetchTokensList();
       const _tokens = await getTokens();
-      setTokensById(_tokens);
+      setTokensBySymbol(_tokens);
     }
     getTokens();
   }, []);
 
   // Update state when draggingValueId or dropContainerId change
   useEffect(() => {
-    // console.log(
-    //   "🚀 ~ file: Drag.tsx ~ line 104 ~ useEffect ~ draggingValueId, dropContainerId",
-    //   draggingValueId,
-    //   dropContainerId,
-    // );
-
     if (draggingValueId && dropContainerId) {
       move(draggingValueId, dropContainerId);
     }
   }, [draggingValueId, dropContainerId]);
 
+  const updateValues = () => {
+    setValues(new Map(values));
+  };
   const handleDragStart = (dragStartEvent: DragStartEvent) => {
     const { active } = dragStartEvent;
     setDraggingValueId(active.id);
   };
 
   const handleDragEnd = (dragEvent: DragEndEvent) => {
-    const { active, over } = dragEvent;
+    const { over } = dragEvent;
     over && setDropContainerId(over.id);
-    // remove active value from its parent Container
-    // const value = values?.get(active.id);
-    // const fromContainer = value?.parentId && containers?.get(value.parentId);
-    // fromContainer && fromContainer.values.delete(active.id);
     setDraggingValueId(undefined);
   };
 
-  return { tokensById, containers, values, draggingValueId, dropContainerId, handleDragStart, handleDragEnd };
+  return {
+    tokensBySymbol,
+    pricesBySymbol,
+    containers,
+    values,
+    draggingValueId,
+    dropContainerId,
+    handleDragStart,
+    handleDragEnd,
+    updateValues,
+  };
 }
 
 interface DraggableValueProps {
@@ -157,46 +184,84 @@ function DraggableValue({ id, handle, children }: DraggableValueProps) {
   );
 }
 
+function InputBank({ nativePrice, onClick }) {
+  const [amount, setAmount] = useState();
+
+  return (
+    <Row justify="space-around">
+      <EtherInput
+        autofocus
+        price={nativePrice}
+        value={amount ?? 0}
+        placeholder="Enter amount"
+        onChange={value => {
+          setAmount(value);
+        }}
+      />
+      <Button onClick={onClick(amount)}>Add to bank</Button>
+    </Row>
+  );
+}
+
 function Drag() {
   const {
-    tokensById,
+    tokensBySymbol,
+    pricesBySymbol,
     containers,
     values,
     draggingValueId,
     dropContainerId,
     handleDragStart,
     handleDragEnd,
+    updateValues,
   } = useHomeState();
 
+  if (!pricesBySymbol || !tokensBySymbol) return null;
   if (!containers) return null;
 
   const draggingValue = draggingValueId && values?.get(draggingValueId);
 
+  const moveToBank = (amount: number) => (event: MouseEvent) => {
+    const newValue = createValue({ amount, currency: nativeToken });
+    const bank = containers.get(bankContainer.id);
+    bank.values.set(newValue.id, newValue);
+    values.set(newValue.id, newValue);
+    updateValues();
+  };
+
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Row align="middle" justify="space-around" style={{ height: "calc(100vh - 160px)" }}>
-        {Array.from(containers).map(([containerId, container]) => (
-          <Col key={containerId}>
-            <DroppableContainer tokensById={tokensById} container={container} dragging={Boolean(draggingValueId)}>
-              {Array.from(container.values).map(([valueId, value]) => {
-                return (
-                  <DraggableValue key={valueId} id={valueId} dragging>
-                    <ValueItem amount={value.amount} currency={value.currency} />
-                  </DraggableValue>
-                );
-              })}
-            </DroppableContainer>
-          </Col>
-        ))}
-        <DragOverlay>
-          {draggingValueId && draggingValue ? (
-            <Value dragging dragOverlay label="Move me!">
-              <ValueItem amount={draggingValue.amount} currency={draggingValue.currency} />
-            </Value>
-          ) : null}
-        </DragOverlay>
-      </Row>
-    </DndContext>
+    <>
+      <InputBank nativePrice={pricesBySymbol.get(nativeToken.symbol)} onClick={moveToBank} />
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <Row align="middle" justify="space-around" style={{ height: "calc(100vh - 160px)" }}>
+          {Array.from(containers).map(([containerId, container]) => (
+            <Col key={containerId}>
+              <DroppableContainer
+                tokensBySymbol={tokensBySymbol}
+                pricesBySymbol={pricesBySymbol}
+                container={container}
+                dragging={Boolean(draggingValueId)}
+              >
+                {Array.from(container.values).map(([valueId, value]) => {
+                  return (
+                    <DraggableValue key={valueId} id={valueId} dragging>
+                      <ValueItem amount={value.amount} currency={value.currency} />
+                    </DraggableValue>
+                  );
+                })}
+              </DroppableContainer>
+            </Col>
+          ))}
+          <DragOverlay>
+            {draggingValueId && draggingValue ? (
+              <Value dragging dragOverlay label="Move me!">
+                <ValueItem amount={draggingValue.amount} currency={draggingValue.currency} />
+              </Value>
+            ) : null}
+          </DragOverlay>
+        </Row>
+      </DndContext>
+    </>
   );
 }
 

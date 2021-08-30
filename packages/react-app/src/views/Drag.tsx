@@ -28,6 +28,7 @@ const bankContainer: Types.Container = {
   currency: nativeToken,
   values: new Map<string, Types.Value>(),
 };
+console.log("🚀 ~ file: Drag.tsx ~ line 25 ~ bankContainer", bankContainer);
 
 const swapDaiContainer: Types.Container = {
   id: DAI.address,
@@ -51,11 +52,20 @@ const value1 = {
   currency: new Types.Euro(),
 };
 
-function createValue({ amount, currency }: { amount: number; currency?: Currency }): Types.Value {
+function createValue({
+  amount,
+  currency,
+  container,
+}: {
+  amount: number;
+  currency?: Currency;
+  container: Types.Container;
+}): Types.Value {
   return {
     id: shortUUID.generate(),
     amount,
     currency: currency || nativeToken,
+    parentId: container.id,
   };
 }
 
@@ -78,6 +88,7 @@ function useHomeState() {
     // Get "fromContainer" from current value parent container
     const fromContainer = value?.parentId && containers?.get(value.parentId);
     const toContainer = containers?.get(toContainerId);
+    console.log("🚀 ~ file: Drag.tsx ~ line 80 ~ move ~ fromContainer", fromContainer, toContainer);
 
     // Remove valueId from current parent "fromContainer"
     fromContainer && fromContainer.values.delete(valueId);
@@ -222,9 +233,8 @@ function Drag() {
   const draggingValue = draggingValueId && values?.get(draggingValueId);
 
   const moveToBank = (amount: number) => (event: MouseEvent) => {
-    const newValue = createValue({ amount, currency: nativeToken });
-    console.log("🚀 ~ file: Drag.tsx ~ line 226 ~ moveToBank ~ newValue", newValue);
     const bank = containers.get(bankContainer.id);
+    const newValue = createValue({ amount, currency: nativeToken, container: bank });
     bank.values.set(newValue.id, newValue);
     values.set(newValue.id, newValue);
     updateValues();

@@ -175,6 +175,8 @@ async function getTotalAmount(
     } else {
       tokenIn = tokensBySymbol[value.currency.symbol];
       tokenOut = tokensBySymbol[containerCurrency.symbol];
+      rateValueUnitsForOneContainerUnit =
+        pricesBySymbol.get(value.currency.symbol) / pricesBySymbol.get(containerCurrency.symbol);
     }
 
     const newValueAmount = value.amount * rateValueUnitsForOneContainerUnit;

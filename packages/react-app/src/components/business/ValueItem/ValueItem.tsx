@@ -1,21 +1,18 @@
 import React from "react";
 import { Currency } from "@uniswap/sdk";
-import classNames from "classnames";
 import { Typography } from "antd";
 
 import { CurrencyLogo } from "../CurrencyLogo";
 
 import styles from "./ValueItem.module.css";
 
-const { Paragraph } = Typography;
+type Props = { amount: number; currency: Currency };
 
-type Props = { amount: number; currency: Currency; isTotal?: boolean };
-
-export function ValueItem({ amount, currency, isTotal }: Props) {
+export function ValueItem({ amount, currency }: Props) {
   return (
-    <div className={classNames(isTotal ? styles.Total : styles.ValueItem)}>
+    <div className={styles.ValueItem}>
       <CurrencyLogo currency={currency} />
-      <p style={{ fontSize: "x-large", margin: 0 }}>{amount?.toFixed(2)}</p>
+      <p style={{ fontSize: "x-large", margin: "0 0 0 5px" }}>{amount?.toFixed(2)}</p>
     </div>
   );
 }

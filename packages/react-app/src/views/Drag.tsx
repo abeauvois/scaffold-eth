@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
 import React, { useEffect, useState } from "react";
-import { DndContext, DragOverlay, useDraggable } from "@dnd-kit/core";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import shortUUID from "short-uuid";
 
@@ -18,6 +18,7 @@ import * as Types from "../types";
 import { fetchTokensList } from "../components/useTokens";
 import { Currency } from "@uniswap/sdk";
 import useNomics from "../components/business/DroppableContainer/nomics";
+import { DraggableValue } from "../components/business/DraggableValue";
 
 const nativeToken = NATIVE(Types.ChainId.MAINNET) as Types.Token;
 
@@ -28,7 +29,6 @@ const bankContainer: Types.Container = {
   currency: nativeToken,
   values: new Map<string, Types.Value>(),
 };
-console.log("🚀 ~ file: Drag.tsx ~ line 25 ~ bankContainer", bankContainer);
 
 const swapDaiContainer: Types.Container = {
   id: DAI.address,
@@ -168,31 +168,6 @@ function useHomeState() {
     handleDragEnd,
     updateValues,
   };
-}
-
-interface DraggableValueProps {
-  children: React.ReactNode;
-  dragging: boolean;
-  handle?: boolean;
-  id: string;
-}
-
-function DraggableValue({ id, handle, children }: DraggableValueProps) {
-  const { isDragging, setNodeRef, listeners } = useDraggable({ id });
-
-  return (
-    <Value
-      dragging={isDragging}
-      ref={setNodeRef}
-      handle={handle}
-      listeners={listeners}
-      style={{
-        opacity: isDragging ? 0 : undefined,
-      }}
-    >
-      {children}
-    </Value>
-  );
 }
 
 function InputBank({ nativePrice, onClick }) {

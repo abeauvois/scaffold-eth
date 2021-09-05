@@ -70,7 +70,9 @@ function CurrencyLogo({
   const [, refresh] = useState<number>(0);
 
   if (currency.symbol === "ETH") {
-    return <StyledEthereumLogo children="Ξ" size={size} {...rest} />;
+    return (
+      <StyledEthereumLogo children={<div style={{ transform: "translateY(17%)" }}>Ξ</div>} size={size} {...rest} />
+    );
   }
 
   if (currency instanceof Currency) {
